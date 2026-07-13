@@ -21,4 +21,8 @@ module.exports = {
         "/node_modules/",
         "/dist/",
     ],
+
+    transformIgnorePatterns: [
+        "/node_modules/(?!@google/genai)",
+    ],
 };
