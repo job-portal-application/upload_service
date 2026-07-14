@@ -1,5 +1,6 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 
+const mockedDestroy = jest.fn();
 const mockedUpload = jest.fn();
 
 jest.unstable_mockModule('cloudinary', () => ({
@@ -7,72 +8,71 @@ jest.unstable_mockModule('cloudinary', () => ({
         v2: {
             uploader: {
                 upload: mockedUpload,
-                destroy: jest.fn(),
+                destroy: mockedDestroy,
             },
         },
     },
 }));
 
-const { upload } = await import(
-    '../services/uploadService.js'
-);
+const { upload } = await import('../services/uploadService.js');
 
 describe('upload service', () => {
     let req: any;
     let res: any;
+
     beforeEach(() => {
-        req = {
-            body: {
-                buffer: 'sample-buffer',
-            },
-        };
+        req = { body: { buffer: 'sample-buffer' } };
         res = {
             status: jest.fn().mockReturnThis(),
             json: jest.fn(),
         };
-
         mockedUpload.mockReset();
+        mockedDestroy.mockReset();
     });
 
-    // should upload file successfully
-    test('should upload file successfully', async () => {
+    test('should upload file successfully without public_id', async () => {
         (mockedUpload as any).mockResolvedValue({
             secure_url: 'https://cloudinary.com/test.pdf',
             public_id: 'resume123',
         });
         await upload(req, res);
-        expect(mockedUpload).toHaveBeenCalledWith(
-            'sample-buffer',
-            {
-                resource_type: 'raw',
-                folder: 'resumes',
-            }
-        );
+        expect(mockedDestroy).not.toHaveBeenCalled();
+        expect(mockedUpload).toHaveBeenCalledWith('sample-buffer', {
+            resource_type: 'auto',
+            folder: 'resume',
+        });
         expect(res.json).toHaveBeenCalledWith({
             url: 'https://cloudinary.com/test.pdf',
             public_id: 'resume123',
         });
     });
 
-    // should return 400 if buffer missing
-    test('should return 400 if buffer missing', async () => {
-        req.body.buffer = null;
+    test('should destroy old file and upload when public_id is provided', async () => {
+        req.body.public_id = 'old-id';
+        (mockedUpload as any).mockResolvedValue({
+            secure_url: 'https://cloudinary.com/new.pdf',
+            public_id: 'new-id',
+        });
+        (mockedDestroy as any).mockResolvedValue({});
         await upload(req, res);
-        expect(res.status).toHaveBeenCalledWith(400);
+        expect(mockedDestroy).toHaveBeenCalledWith('old-id');
         expect(res.json).toHaveBeenCalledWith({
-            message: 'No file uploaded',
+            url: 'https://cloudinary.com/new.pdf',
+            public_id: 'new-id',
         });
     });
 
-    // should return 500 if upload fails
-    test('should return 500 if cloudinary upload fails', async () => {
-        (mockedUpload as any).mockRejectedValue(
-            new Error('Cloudinary error')
-        );
+    test('should return 400 if buffer is missing', async () => {
+        req.body.buffer = null;
+        await upload(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({ message: 'No file uploaded' });
+    });
+
+    test('should return 500 if cloudinary upload throws', async () => {
+        (mockedUpload as any).mockRejectedValue(new Error('Cloudinary error'));
         await upload(req, res);
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({
-            message: 'Cloudinary error',
-        });
+        expect(res.json).toHaveBeenCalledWith({ message: 'Cloudinary error' });
     });
 });

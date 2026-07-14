@@ -3,18 +3,17 @@ import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-const geminiApiKey = process.env.GEMINI_API_KEY;
-if (!geminiApiKey) {
-    throw new Error('Missing GEMINI_API_KEY');
-}
-const genAI = new GoogleGenAI({ apiKey: geminiApiKey });
-
 export const generate = async(req: any, res: any) => {
     try {
         const { skills } = req.body;
         if(!skills) {
             return res.status(400).json({ message: 'Skills are required' });
         }
+        const geminiApiKey = process.env.GEMINI_API_KEY;
+        if (!geminiApiKey) {
+            return res.status(500).json({ message: 'Missing GEMINI_API_KEY' });
+        }
+        const genAI = new GoogleGenAI({ apiKey: geminiApiKey });
         const prompt = `
 Based on the following skills: ${skills}.
 Please act as a career advisor and generate a career path suggestion.
