@@ -1,5 +1,5 @@
 #Needs modification
-name: Run all tests
+name: CI
 
 on:
   push:
