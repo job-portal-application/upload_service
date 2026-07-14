@@ -74,10 +74,4 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        
-      - name: Stop Kafka
-        if: always()
-        run: |
-          echo "Stopping Kafka..."
-          docker stop kafka || true
-          docker rm kafka || true
+          
