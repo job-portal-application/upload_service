@@ -10,15 +10,17 @@ on:
       - development
       - main
 
-permissions:
-  contents: read
-
 jobs:
   test:
+    name: SonarQube
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -40,13 +42,15 @@ jobs:
             -e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0 \
             apache/kafka:4.1.0
 
-      - name: Wait for Kafka
-        run: sleep 20
+      - name: Wait for Kafka to start
+        run: |
+          echo "Waiting for Kafka to start..."
+          sleep 20
 
       - name: Build Docker Image
         run: docker build -t upload-service .
 
-      - name: Run Tests
+      - name: Run Jest Tests inside Docker
         env:
           PORT: ${{ secrets.PORT }}
           APP_EMAIL: ${{ secrets.APP_EMAIL }}
