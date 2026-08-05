@@ -86,6 +86,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: upload-service-dev-task-service-wpqu4ud3
+          service: upload-service-dev-task-service-9mfc0198
           cluster: dev-cluster
           wait-for-service-stability: true
