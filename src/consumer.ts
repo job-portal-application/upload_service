@@ -8,7 +8,7 @@ export const startSendMailConsumer = async() => {
     try {
         const kafka = new Kafka({
             clientId: 'mail-service',
-            brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+            brokers: [process.env.KAFKA_BROKER as string],
         }); 
         const consumer = kafka.consumer({ groupId: 'mail-service-group' });
         await consumer.connect();
